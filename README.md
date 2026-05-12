@@ -1,4 +1,4 @@
-Learning AI — Command Centre
+🚀 Learning AI - Command Centre
 
 A beautifully over-engineered HTML command centre for AI enthusiasts, SaaS builders, prompt engineers, accidental architects, and people who casually say things like:
 
