@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning AI — Command Centre</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg:        #0d0f12;
+    --surface:   #13161b;
+    --surface2:  #1a1e25;
+    --surface3:  #21262f;
+    --border:    rgba(255,255,255,0.07);
+    --border2:   rgba(255,255,255,0.12);
+    --accent:    #e8c96d;
+    --accent2:   #4dd9ac;
+    --accent3:   #6d9ee8;
+    --text:      #e8eaf0;
+    --text2:     #8b909c;
+    --text3:     #555b66;
+    --mono:      'DM Mono', 'Fira Code', monospace;
+    --display:   'Syne', system-ui, sans-serif;
+    --red:       #e86d6d;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--display);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── LAYOUT ── */
+  .shell {
+    display: grid;
+    grid-template-rows: 56px 1fr;
+    grid-template-columns: 220px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    gap: 16px;
+    position: relative;
+  }
+  .topbar-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar-logo .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+  .topbar-sep { flex: 1; }
+  .topbar-clock {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+  }
+  .topbar-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 28px;
+  }
+  .sidebar-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding: 0 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: var(--surface3);
+    color: var(--text);
+    border-color: var(--border2);
+  }
+  .nav-item .nav-icon {
+    font-size: 15px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .nav-item .nav-badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--surface3);
+    color: var(--text3);
+  }
+  .nav-item.active .nav-badge { background: rgba(232,201,109,0.12); color: var(--accent); }
+
+  /* timer widget in sidebar */
+  .timer-widget {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 0 16px 20px;
+  }
+  .timer-label { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .timer-display {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .timer-display.warning { color: var(--red); }
+  .timer-bar-track {
+    height: 3px;
+    background: var(--surface3);
+    border-radius: 2px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .timer-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 1s linear, background 0.3s;
+    width: 100%;
+  }
+  .timer-bar-fill.warning { background: var(--red); }
+  .timer-controls { display: flex; gap: 6px; }
+  .timer-btn {
+    flex: 1;
+    padding: 5px 0;
+    border-radius: 5px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .timer-btn:hover { background: var(--surface3); color: var(--text); }
+  .timer-btn.primary { border-color: var(--accent); color: var(--accent); }
+  .timer-btn.primary:hover { background: rgba(232,201,109,0.1); }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    overflow-y: auto;
+    background: var(--bg);
+    padding: 32px 40px;
+  }
+
+  /* panels */
+  .panel { display: none; animation: fadeIn 0.2s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel-header { margin-bottom: 28px; }
+  .panel-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .panel-title { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+  .panel-sub { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+  /* ── AGENDA PANEL ── */
+  .agenda-grid { display: flex; flex-direction: column; gap: 0; }
+  .agenda-slot {
+    display: grid;
+    grid-template-columns: 70px 3px 1fr;
+    gap: 0 16px;
+    position: relative;
+    padding-bottom: 4px;
+  }
+  .slot-time-col {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    padding-top: 16px;
+    padding-right: 4px;
+    line-height: 1.3;
+  }
+  .slot-time-col .dur {
+    font-size: 10px;
+    color: var(--text3);
+    display: block;
+  }
+  .slot-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+  .slot-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--surface3);
+    margin-top: 19px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .slot-connector {
+    width: 1px;
+    flex: 1;
+    background: var(--border2);
+    margin-top: 2px;
+  }
+  .agenda-slot:last-child .slot-connector { display: none; }
+  .slot-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s;
+    cursor: default;
+  }
+  .slot-card:hover { border-color: var(--border2); }
+  .slot-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .slot-card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .slot-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tag-align { border-color: rgba(109,158,232,0.4); color: var(--accent3); background: rgba(109,158,232,0.06); }
+  .tag-share { border-color: rgba(77,217,172,0.4); color: var(--accent2); background: rgba(77,217,172,0.06); }
+  .tag-build { border-color: rgba(232,201,109,0.4); color: var(--accent); background: rgba(232,201,109,0.06); }
+  .tag-reflect { border-color: rgba(232,109,109,0.4); color: var(--red); background: rgba(232,109,109,0.06); }
+  .slot-card-desc { font-size: 13px; color: var(--text2); line-height: 1.55; }
+
+  /* ── ARCH PANEL ── */
+  .arch-list { display: flex; flex-direction: column; gap: 8px; }
+  .arch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .arch-card:hover { border-color: var(--border2); }
+  .arch-card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .arch-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .arch-card-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+  .arch-card-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+  .arch-toggle { font-size: 18px; color: var(--text3); transition: transform 0.2s; }
+  .arch-card.open .arch-toggle { transform: rotate(180deg); }
+  .arch-body {
+    display: none;
+    padding: 0 18px 16px 58px;
+    border-top: 1px solid var(--border);
+  }
+  .arch-card.open .arch-body { display: block; }
+  .arch-desc { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; padding-top: 12px; }
+  .arch-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .arch-chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+
+  /* ── TEMPLATE PANEL ── */
+  .template-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .template-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .template-topbar-title { font-family: var(--mono); font-size: 12px; color: var(--text2); letter-spacing: 0.05em; }
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 14px;
+    border-radius: 5px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--accent); color: var(--accent); }
+  .template-fields { padding: 4px 0; }
+  .tfield {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    border-bottom: 1px solid var(--border);
+    min-height: 44px;
+  }
+  .tfield:last-child { border-bottom: none; }
+  .tfield-key {
+    padding: 12px 18px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.05em;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 14px;
+  }
+  .tfield-val {
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.55;
+    font-style: italic;
+  }
+  .tfield-val.example { font-style: normal; color: var(--text3); }
+
+  /* ── PRINCIPLES PANEL ── */
+  .principles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .principle-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .principle-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .principle-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  .principle-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .principle-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .principle-accent { width: 24px; height: 2px; border-radius: 2px; margin-bottom: 12px; }
+
+  /* ── SESSION LOG ── */
+  .log-grid { display: flex; flex-direction: column; gap: 8px; }
+  .log-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    transition: border-color 0.15s;
+  }
+  .log-card:hover { border-color: var(--border2); }
+  .log-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    width: 28px;
+    text-align: right;
+  }
+  .log-info {}
+  .log-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .log-meta { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+  .log-layer {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+  }
+  .log-empty {
+    text-align: center;
+    padding: 40px 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text3);
+    background: var(--surface);
+    border: 1px dashed var(--border2);
+    border-radius: 8px;
+  }
+  .add-session-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .form-full { grid-column: 1 / -1; }
+  .form-label { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
+  .form-input, .form-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-family: var(--display);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--text3); }
+  .form-select option { background: var(--surface2); }
+  .form-actions { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-primary {
+    padding: 8px 20px;
+    border-radius: 5px;
+    border: 1px solid var(--accent);
+    background: rgba(232,201,109,0.1);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary:hover { background: rgba(232,201,109,0.18); }
+  .btn-ghost {
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-ghost:hover { background: var(--surface2); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <span class="dot"></span>
+      LEARNING AI
+    </div>
+    <div class="topbar-sep"></div>
+    <span class="topbar-tag">30-min session format</span>
+    <div class="topbar-clock" id="clock">--:-- --</div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+
+    <div class="timer-widget">
+      <div class="timer-label">Session timer</div>
+      <div class="timer-display" id="timer-display">30:00</div>
+      <div class="timer-bar-track"><div class="timer-bar-fill" id="timer-bar"></div></div>
+      <div class="timer-controls">
+        <button class="timer-btn primary" id="timer-start-btn" onclick="timerToggle()">Start</button>
+        <button class="timer-btn" onclick="timerReset()">Reset</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <div class="nav-item active" onclick="switchPanel('agenda', this)">
+        <span class="nav-icon">⏱</span> Agenda
+        <span class="nav-badge">5 slots</span>
+      </div>
+      <div class="nav-item" onclick="switchPanel('arch', this)">
+        <span class="nav-icon">⬡</span> Architecture
+        <span class="nav-badge">6 layers</span>
+      </div>
+      <div class="nav-item" onclick="switchPanel('template', this)">
+        <span class="nav-icon">◻</span> Project template
+      </div>
+      <div class="nav-item" onclick="switchPanel('principles', this)">
+        <span class="nav-icon">◈</span> Principles
+        <span class="nav-badge">6</span>
+      </div>
+      <div class="nav-item" onclick="switchPanel('log', this)">
+        <span class="nav-icon">◷</span> Session log
+        <span class="nav-badge" id="log-badge">0</span>
+      </div>
+    </div>
+
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ── AGENDA ── -->
+    <div id="panel-agenda" class="panel active">
+      <div class="panel-header">
+        <div class="panel-eyebrow">// 001 — session format</div>
+        <div class="panel-title">The 30-minute agenda</div>
+        <div class="panel-sub">Every session follows this structure. No exceptions — consistency is what compounds.</div>
+      </div>
+
+      <div class="agenda-grid">
+
+        <div class="agenda-slot">
+          <div class="slot-time-col">0:00<span class="dur">3 min</span></div>
+          <div class="slot-line">
+            <div class="slot-dot" style="background:var(--accent3); border-color:rgba(109,158,232,0.3);"></div>
+            <div class="slot-connector"></div>
+          </div>
+          <div>
+            <div class="slot-card">
+              <div class="slot-card-top">
+                <div class="slot-card-title">Quick frame</div>
+                <span class="slot-tag tag-align">Alignment</span>
+              </div>
+              <div class="slot-card-desc">Presenter states the problem they solved, which architecture layer it lives in, and the one thing they want everyone to take away. No context-setting, no backstory — just the frame.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="agenda-slot">
+          <div class="slot-time-col">3:00<span class="dur">9 min</span></div>
+          <div class="slot-line">
+            <div class="slot-dot" style="background:var(--accent2); border-color:rgba(77,217,172,0.3);"></div>
+            <div class="slot-connector"></div>
+          </div>
+          <div>
+            <div class="slot-card">
+              <div class="slot-card-top">
+                <div class="slot-card-title">Show the build</div>
+                <span class="slot-tag tag-share">Share</span>
+              </div>
+              <div class="slot-card-desc">Live demo or code walkthrough. Follow the project template format so everyone knows where to look. Focus on the interesting decisions — skip the boilerplate. The repo link goes in the chat before you start.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="agenda-slot">
+          <div class="slot-time-col">12:00<span class="dur">6 min</span></div>
+          <div class="slot-line">
+            <div class="slot-dot" style="background:var(--accent); border-color:rgba(232,201,109,0.3);"></div>
+            <div class="slot-connector"></div>
+          </div>
+          <div>
+            <div class="slot-card">
+              <div class="slot-card-top">
+                <div class="slot-card-title">The key insight</div>
+                <span class="slot-tag tag-build">Build</span>
+              </div>
+              <div class="slot-card-desc">One diagram, one slide, or one whiteboard moment. What's the reusable pattern? What was the hardest thing to figure out? If you can't say it in 60 seconds, distil further.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="agenda-slot">
+          <div class="slot-time-col">18:00<span class="dur">7 min</span></div>
+          <div class="slot-line">
+            <div class="slot-dot" style="background:var(--accent2); border-color:rgba(77,217,172,0.3);"></div>
+            <div class="slot-connector"></div>
+          </div>
+          <div>
+            <div class="slot-card">
+              <div class="slot-card-top">
+                <div class="slot-card-title">Open questions &amp; riffs</div>
+                <span class="slot-tag tag-share">Share</span>
+              </div>
+              <div class="slot-card-desc">Group asks: "What if we extended this to…?" or "I had a similar problem…". Ideas are captured but not rabbit-holed. Presenter keeps a parking lot — anything unresolved goes there, not into the next agenda slot.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="agenda-slot">
+          <div class="slot-time-col">25:00<span class="dur">5 min</span></div>
+          <div class="slot-line">
+            <div class="slot-dot" style="background:var(--red); border-color:rgba(232,109,109,0.3);"></div>
+            <div class="slot-connector"></div>
+          </div>
+          <div>
+            <div class="slot-card">
+              <div class="slot-card-top">
+                <div class="slot-card-title">Commit + next step</div>
+                <span class="slot-tag tag-reflect">Reflect</span>
+              </div>
+              <div class="slot-card-desc">Each person says one thing they'll try or build before next session. Presenter posts code and README to the shared repo before EOD. This 5 minutes is what makes the other 25 compound.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── ARCHITECTURE ── -->
+    <div id="panel-arch" class="panel">
+      <div class="panel-header">
+        <div class="panel-eyebrow">// 002 — shared mental model</div>
+        <div class="panel-title">AI architecture layers</div>
+        <div class="panel-sub">Every project maps to a layer. This is the shared vocabulary — use it when framing your session.</div>
+      </div>
+
+      <div class="arch-list">
+
+        <div class="arch-card" onclick="toggleArch(this)">
+          <div class="arch-card-header">
+            <div class="arch-num" style="background:rgba(109,158,232,0.12);color:var(--accent3);">01</div>
+            <div class="arch-card-title">Foundation — models &amp; APIs</div>
+            <div class="arch-card-sub">the brain</div>
+            <div class="arch-toggle">⌄</div>
+          </div>
+          <div class="arch-body">
+            <div class="arch-desc">Raw language models, embeddings, and multimodal capabilities. You don't build this — you call it. Understanding context windows, token costs, temperature, and model selection lives here. Start every project by asking: which model is right for this task, and why?</div>
+            <div class="arch-chips">
+              <span class="arch-chip">Claude / GPT / Gemini</span>
+              <span class="arch-chip">Embeddings</span>
+              <span class="arch-chip">Fine-tuning</span>
+              <span class="arch-chip">Multimodal</span>
+              <span class="arch-chip">Context windows</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-card" onclick="toggleArch(this)">
+          <div class="arch-card-header">
+            <div class="arch-num" style="background:rgba(232,201,109,0.12);color:var(--accent);">02</div>
+            <div class="arch-card-title">Orchestration — prompts &amp; chains</div>
+            <div class="arch-card-sub">the craft</div>
+            <div class="arch-toggle">⌄</div>
+          </div>
+          <div class="arch-body">
+            <div class="arch-desc">How you structure calls to the model. System prompts, few-shot examples, chain-of-thought, structured output parsing. The difference between a bad and great AI product often lives entirely in this layer. Prompt engineering is real engineering.</div>
+            <div class="arch-chips">
+              <span class="arch-chip">LangChain / LlamaIndex</span>
+              <span class="arch-chip">Prompt templates</span>
+              <span class="arch-chip">JSON output</span>
+              <span class="arch-chip">RAG pipelines</span>
+              <span class="arch-chip">Few-shot examples</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-card" onclick="toggleArch(this)">
+          <div class="arch-card-header">
+            <div class="arch-num" style="background:rgba(77,217,172,0.1);color:var(--accent2);">03</div>
+            <div class="arch-card-title">Memory &amp; context — storing state</div>
+            <div class="arch-card-sub">the recall</div>
+            <div class="arch-toggle">⌄</div>
+          </div>
+          <div class="arch-body">
+            <div class="arch-desc">Models are stateless — you add memory. Vector databases, document stores, conversation history management, and retrieval strategies. How you feed the right context at the right moment determines everything. Retrieval quality beats model quality, often.</div>
+            <div class="arch-chips">
+              <span class="arch-chip">Pinecone / Chroma / pgvector</span>
+              <span class="arch-chip">Chunking strategy</span>
+              <span class="arch-chip">Hybrid search</span>
+              <span class="arch-chip">Reranking</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-card" onclick="toggleArch(this)">
+          <div class="arch-card-header">
+            <div class="arch-num" style="background:rgba(232,109,109,0.1);color:var(--red);">04</div>
+            <div class="arch-card-title">Agents &amp; tools — taking action</div>
+            <div class="arch-card-sub">the hands</div>
+            <div class="arch-toggle">⌄</div>
+          </div>
+          <div class="arch-body">
+            <div class="arch-desc">The model decides to call external tools — APIs, code runners, browsers, databases. Agentic loops, tool use, function calling, MCP servers. This is where AI goes from answering to doing. The hard problem is reliability in multi-step chains.</div>
+            <div class="arch-chips">
+              <span class="arch-chip">Tool / function calling</span>
+              <span class="arch-chip">MCP servers</span>
+              <span class="arch-chip">Code execution</span>
+              <span class="arch-chip">Browser agents</span>
+              <span class="arch-chip">ReAct loops</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-card" onclick="toggleArch(this)">
+          <div class="arch-card-header">
+            <div class="arch-num" style="background:rgba(109,158,232,0.12);color:var(--accent3);">05</div>
+            <div class="arch-card-title">Interface — how humans interact</div>
+            <div class="arch-card-sub">the surface</div>
+            <div class="arch-toggle">⌄</div>
+          </div>
+          <div class="arch-body">
+            <div class="arch-desc">The surface your users touch. Chat UIs, voice, CLI tools, background automation, Slack bots. Streaming responses, feedback loops, and UX patterns specific to AI interactions. Good interfaces make the model feel smarter than it is.</div>
+            <div class="arch-chips">
+              <span class="arch-chip">Streaming UI</span>
+              <span class="arch-chip">Voice / speech</span>
+              <span class="arch-chip">CLI tools</span>
+              <span class="arch-chip">Slack / email bots</span>
+              <span class="arch-chip">Dashboards</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-card" onclick="toggleArch(this)">
+          <div class="arch-card-header">
+            <div class="arch-num" style="background:rgba(77,217,172,0.1);color:var(--accent2);">06</div>
+            <div class="arch-card-title">Evaluation — knowing if it works</div>
+            <div class="arch-card-sub">the mirror</div>
+            <div class="arch-toggle">⌄</div>
+          </div>
+          <div class="arch-body">
+            <div class="arch-desc">How do you know your AI is actually good? Evals, benchmarks, logging, human feedback, A/B testing prompts. This layer is skipped most often and regretted most often. Every production AI system needs this. Build it early.</div>
+            <div class="arch-chips">
+              <span class="arch-chip">LLM-as-judge</span>
+              <span class="arch-chip">Golden datasets</span>
+              <span class="arch-chip">Logging / traces</span>
+              <span class="arch-chip">Human review</span>
+              <span class="arch-chip">A/B prompts</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── TEMPLATE ── -->
+    <div id="panel-template" class="panel">
+      <div class="panel-header">
+        <div class="panel-eyebrow">// 003 — project template</div>
+        <div class="panel-title">README format</div>
+        <div class="panel-sub">Paste this into your repo before each session. Consistency here means everyone can pick up anyone's work cold.</div>
+      </div>
+
+      <div class="template-block">
+        <div class="template-topbar">
+          <span class="template-topbar-title">README.md — standard fields</span>
+          <button class="copy-btn" id="copy-btn" onclick="copyTemplate()">⎘ Copy as markdown</button>
+        </div>
+        <div class="template-fields">
+          <div class="tfield">
+            <div class="tfield-key">project_name</div>
+            <div class="tfield-val">"Email summariser with memory" — one clear noun phrase</div>
+          </div>
+          <div class="tfield">
+            <div class="tfield-key">architecture_layer</div>
+            <div class="tfield-val">Which layer(s) from the shared model does this touch? Be specific.</div>
+          </div>
+          <div class="tfield">
+            <div class="tfield-key">the_problem</div>
+            <div class="tfield-val">One sentence. What real friction does this remove? Who feels that friction?</div>
+          </div>
+          <div class="tfield">
+            <div class="tfield-key">how_it_works</div>
+            <div class="tfield-val">3–5 bullets. No jargon. What would you tell a friend at the pub?</div>
+          </div>
+          <div class="tfield">
+            <div class="tfield-key">the_key_decision</div>
+            <div class="tfield-val">What was the hardest design choice? What did you try first that didn't work?</div>
+          </div>
+          <div class="tfield">
+            <div class="tfield-key">to_run_it</div>
+            <div class="tfield-val">3 commands max. If it needs more, automate the rest. Include env var setup.</div>
+          </div>
+          <div class="tfield">
+            <div class="tfield-key">build_on_this</div>
+            <div class="tfield-val">2–3 explicit ideas for where the group could take it next. Be concrete.</div>
+          </div>
+          <div class="tfield">
+            <div class="tfield-key">would_do_differently</div>
+            <div class="tfield-val">Honest reflection. This field is what turns a project into a learning resource.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PRINCIPLES ── -->
+    <div id="panel-principles" class="panel">
+      <div class="panel-header">
+        <div class="panel-eyebrow">// 004 — working agreements</div>
+        <div class="panel-title">Group principles</div>
+        <div class="panel-sub">How the group operates. Agree on these together, then hold each other to them.</div>
+      </div>
+
+      <div class="principles-grid">
+
+        <div class="principle-card">
+          <div class="principle-num">// 01</div>
+          <div class="principle-accent" style="background:var(--accent3);"></div>
+          <div class="principle-title">Build on the same stack</div>
+          <div class="principle-body">Everyone anchors to the shared architecture layers. Even small experiments should map to a layer, so knowledge compounds across sessions — not just within them.</div>
+        </div>
+
+        <div class="principle-card">
+          <div class="principle-num">// 02</div>
+          <div class="principle-accent" style="background:var(--accent);"></div>
+          <div class="principle-title">One level harder each time</div>
+          <div class="principle-body">Each session should push one layer deeper or wider than the last. No covering the same territory without a meaningfully new angle. Progress is the metric.</div>
+        </div>
+
+        <div class="principle-card">
+          <div class="principle-num">// 03</div>
+          <div class="principle-accent" style="background:var(--accent2);"></div>
+          <div class="principle-title">Code is the artefact</div>
+          <div class="principle-body">Every session produces something runnable. Slides alone don't count. The repo is the product. If it's not in the repo by EOD, it didn't happen.</div>
+        </div>
+
+        <div class="principle-card">
+          <div class="principle-num">// 04</div>
+          <div class="principle-accent" style="background:var(--red);"></div>
+          <div class="principle-title">Questions over polish</div>
+          <div class="principle-body">Half-built with honest questions beats finished with no curiosity. The best sessions end with more questions than they started. Ship rough, think deep.</div>
+        </div>
+
+        <div class="principle-card">
+          <div class="principle-num">// 05</div>
+          <div class="principle-accent" style="background:var(--accent3);"></div>
+          <div class="principle-title">Rotate the presenter</div>
+          <div class="principle-body">Everyone presents, everyone builds. Watching is learning; doing is knowing. Rotate weekly — no one sits in the audience for more than two sessions straight.</div>
+        </div>
+
+        <div class="principle-card">
+          <div class="principle-num">// 06</div>
+          <div class="principle-accent" style="background:var(--accent);"></div>
+          <div class="principle-title">Document to teach</div>
+          <div class="principle-body">Your README should let any member run the project cold, six months from now. Write for Future-You who remembers nothing about this session.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SESSION LOG ── -->
+    <div id="panel-log" class="panel">
+      <div class="panel-header">
+        <div class="panel-eyebrow">// 005 — session history</div>
+        <div class="panel-title">Session log</div>
+        <div class="panel-sub">Record each session as it happens. Your group's growing knowledge base.</div>
+      </div>
+
+      <div class="log-grid" id="log-list">
+        <div class="log-empty" id="log-empty">
+          No sessions recorded yet. Add the first one below ↓
+        </div>
+      </div>
+
+      <div class="add-session-form">
+        <div class="form-full">
+          <div class="form-label">Session title / project name</div>
+          <input class="form-input" id="log-title" type="text" placeholder="e.g. RAG pipeline with Chroma and Claude">
+        </div>
+        <div>
+          <div class="form-label">Presenter</div>
+          <input class="form-input" id="log-presenter" type="text" placeholder="Name">
+        </div>
+        <div>
+          <div class="form-label">Architecture layer</div>
+          <select class="form-select" id="log-layer">
+            <option value="">— select layer —</option>
+            <option value="Layer 01 — Foundation">Layer 01 — Foundation</option>
+            <option value="Layer 02 — Orchestration">Layer 02 — Orchestration</option>
+            <option value="Layer 03 — Memory">Layer 03 — Memory</option>
+            <option value="Layer 04 — Agents">Layer 04 — Agents</option>
+            <option value="Layer 05 — Interface">Layer 05 — Interface</option>
+            <option value="Layer 06 — Evaluation">Layer 06 — Evaluation</option>
+            <option value="Multi-layer">Multi-layer</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn-ghost" onclick="clearForm()">Clear</button>
+          <button class="btn-primary" onclick="addSession()">+ Log session</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ── CLOCK ──
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes().toString().padStart(2,'0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    document.getElementById('clock').textContent = `${h % 12 || 12}:${m} ${ampm}`;
+  }
+  updateClock();
+  setInterval(updateClock, 10000);
+
+  // ── NAV ──
+  function switchPanel(name, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  // ── ARCH EXPAND ──
+  function toggleArch(el) {
+    el.classList.toggle('open');
+  }
+
+  // ── TIMER ──
+  const TOTAL = 30 * 60;
+  let remaining = TOTAL, running = false, interval = null;
+
+  function timerToggle() {
+    if (running) {
+      clearInterval(interval);
+      running = false;
+      document.getElementById('timer-start-btn').textContent = 'Resume';
+    } else {
+      if (remaining <= 0) timerReset();
+      running = true;
+      document.getElementById('timer-start-btn').textContent = 'Pause';
+      interval = setInterval(() => {
+        remaining--;
+        renderTimer();
+        if (remaining <= 0) {
+          clearInterval(interval);
+          running = false;
+          document.getElementById('timer-start-btn').textContent = 'Start';
+        }
+      }, 1000);
+    }
+  }
+
+  function timerReset() {
+    clearInterval(interval);
+    running = false;
+    remaining = TOTAL;
+    document.getElementById('timer-start-btn').textContent = 'Start';
+    renderTimer();
+  }
+
+  function renderTimer() {
+    const m = Math.floor(remaining / 60).toString().padStart(2,'0');
+    const s = (remaining % 60).toString().padStart(2,'0');
+    const disp = document.getElementById('timer-display');
+    const bar = document.getElementById('timer-bar');
+    const pct = (remaining / TOTAL) * 100;
+    const warn = remaining < 5 * 60;
+    disp.textContent = `${m}:${s}`;
+    disp.className = 'timer-display' + (warn ? ' warning' : '');
+    bar.style.width = pct + '%';
+    bar.className = 'timer-bar-fill' + (warn ? ' warning' : '');
+  }
+
+  // ── SESSION LOG ──
+  let sessions = JSON.parse(localStorage.getItem('lai_sessions') || '[]');
+
+  function renderLog() {
+    const list = document.getElementById('log-list');
+    const empty = document.getElementById('log-empty');
+    const badge = document.getElementById('log-badge');
+    badge.textContent = sessions.length;
+    if (sessions.length === 0) {
+      empty.style.display = 'block';
+      list.querySelectorAll('.log-card').forEach(c => c.remove());
+      return;
+    }
+    empty.style.display = 'none';
+    list.querySelectorAll('.log-card').forEach(c => c.remove());
+    [...sessions].reverse().forEach((s, i) => {
+      const n = sessions.length - i;
+      const card = document.createElement('div');
+      card.className = 'log-card';
+      card.innerHTML = `
+        <div class="log-num">#${String(n).padStart(2,'0')}</div>
+        <div class="log-info">
+          <div class="log-title">${s.title}</div>
+          <div class="log-meta">${s.presenter ? s.presenter + ' · ' : ''}${s.date}</div>
+        </div>
+        ${s.layer ? `<div class="log-layer">${s.layer}</div>` : ''}
+      `;
+      list.insertBefore(card, list.firstChild.nextSibling || null);
+    });
+  }
+
+  function addSession() {
+    const title = document.getElementById('log-title').value.trim();
+    if (!title) { document.getElementById('log-title').focus(); return; }
+    const presenter = document.getElementById('log-presenter').value.trim();
+    const layer = document.getElementById('log-layer').value;
+    const now = new Date();
+    const date = now.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    sessions.push({ title, presenter, layer, date });
+    localStorage.setItem('lai_sessions', JSON.stringify(sessions));
+    clearForm();
+    renderLog();
+  }
+
+  function clearForm() {
+    document.getElementById('log-title').value = '';
+    document.getElementById('log-presenter').value = '';
+    document.getElementById('log-layer').value = '';
+  }
+
+  renderLog();
+
+  // ── COPY TEMPLATE ──
+  function copyTemplate() {
+    const md = `# [Project name]
+> One-line description of what it does.
+
+## Architecture layer
+<!-- Which layer(s) from the shared model does this touch? -->
+
+## The problem
+<!-- One sentence. What real friction does this remove? Who feels that friction? -->
+
+## How it works
+- 
+- 
+- 
+
+## The key decision
+<!-- What was the hardest design choice? What did you try first that didn't work? -->
+
+## To run it
+\`\`\`bash
+# step 1
+# step 2
+# step 3
+\`\`\`
+
+## Build on this
+1. 
+2. 
+3. 
+
+## What I'd do differently
+<!-- Honest reflection. This field is what turns a project into a learning resource. -->
+`;
+    navigator.clipboard.writeText(md).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = '⎘ Copy as markdown'; }, 2200);
+    }).catch(() => {
+      document.getElementById('copy-btn').textContent = 'Select + copy manually';
+    });
+  }
+</script>
+</body>
+</html>
